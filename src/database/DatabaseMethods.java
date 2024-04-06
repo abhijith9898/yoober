@@ -89,7 +89,7 @@ public class DatabaseMethods {
     // methods
     int accountId = insertAccount(account);
     if (accountId != -1) {
-      if (account.isPassenger() && account.isDriver()) {
+      if (account.isDriverAndPassenger()) {
         insertPassenger(passenger, accountId);
         insertDriver(driver, accountId);
       } else if (account.isDriver()) {
@@ -166,9 +166,16 @@ public class DatabaseMethods {
    */
   public int insertPassenger(Passenger passenger, int accountId) throws SQLException {
     // TODO: Implement
+    String creditCardNumber = passenger.getCreditCardNumber();
     String insertPassengerQuery = "INSERT INTO passengers VALUES (?,?);";
-    PreparedStatement insertPassengerStmt = conn.prepareStatement(insertPassengerQuery, Statement.RETURN_GENERATED_KEYS);
-
+    PreparedStatement insertPassengerStmt = conn.prepareStatement(insertPassengerQuery,Statement.RETURN_GENERATED_KEYS);
+    insertPassengerStmt.setInt(1, accountId);
+    insertPassengerStmt.setString(2, creditCardNumber);
+    insertPassengerStmt.executeUpdate();
+    ResultSet keys = insertPassengerStmt.getGeneratedKeys();
+    keys.next();
+    accountId = keys.getInt(1);
+    insertPassengerStmt.close();
     return accountId;
   }
 
@@ -181,7 +188,21 @@ public class DatabaseMethods {
   public int insertDriver(Driver driver, int accountId) throws SQLException {
     // TODO: Implement
     // Hint: Use the insertLicense method
-
+    int licenseId = -1;
+    String licenseNumber = driver.getLicenseNumber();
+    String licenseExpiry = driver.getLicenseExpiryDate();
+    licenseId = insertLicense(licenseNumber, licenseExpiry);
+    if (licenseId != -1) {
+      String insertDriverQuery = "INSERT INTO drivers values (?,?)";
+      PreparedStatement insertDriverStmt = conn.prepareStatement(insertDriverQuery, Statement.RETURN_GENERATED_KEYS);
+      insertDriverStmt.setInt(1, accountId);
+      insertDriverStmt.setInt(2, licenseId);
+      insertDriverStmt.executeUpdate();
+      ResultSet keys = insertDriverStmt.getGeneratedKeys();
+      keys.next();
+      accountId = keys.getInt(1);
+      insertDriverStmt.close();
+    }
     return accountId;
   }
 
@@ -192,8 +213,15 @@ public class DatabaseMethods {
    */
   public int insertLicense(String licenseNumber, String licenseExpiry) throws SQLException {
     int licenseId = -1;
-    // TODO: Implement
-
+    String insertLicenseQuery = "INSERT INTO licenses (NUMBER,EXPIRY_DATE) VALUES (?,?)";
+    PreparedStatement insertLicenseStmt = conn.prepareStatement(insertLicenseQuery,Statement.RETURN_GENERATED_KEYS);
+    insertLicenseStmt.setString(1, licenseNumber);
+    insertLicenseStmt.setString(2, licenseExpiry);
+    insertLicenseStmt.executeUpdate();
+    ResultSet keys = insertLicenseStmt.getGeneratedKeys();
+    keys.next();
+    licenseId = keys.getInt(1);
+    insertLicenseStmt.close();
     return licenseId;
   }
 
@@ -270,8 +298,8 @@ public class DatabaseMethods {
    */
   public void insertRideRequest(String passengerEmail, int dropoffLocationId, String date, String time,
       int numberOfPassengers) throws SQLException {
-    int passengerId = this.getPassengerIdFromEmail(passengerEmail);
-    int pickupAddressId = this.getAccountAddressIdFromEmail(passengerEmail);
+      int passengerId = this.getPassengerIdFromEmail(passengerEmail);
+      int pickupAddressId = this.getAccountAddressIdFromEmail(passengerEmail);
 
     // TODO: Implement
   }
