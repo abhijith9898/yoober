@@ -109,52 +109,60 @@ public class DatabaseMethods {
    */
   public int insertAccount(Account account) throws SQLException {
     int accountId = -1;
+    try {
+      // TODO: Implement
+      // Hint: Use the insertAddressIfNotExists method
+      String firstName = account.getFirstName();
+      String lastName = account.getLastName();
+      Address address = account.getAddress();
+      String street = account.getStreet();
+      String city = account.getCity();
+      String province = account.getProvince();
+      String postalCode = account.getPostalCode();
+      String phoneNumber = account.getPhoneNumber();
+      String email = account.getEmail();
+      String birthdate = account.getBirthdate();
 
-    // TODO: Implement
-    // Hint: Use the insertAddressIfNotExists method
-    String firstName = account.getFirstName();
-    String lastName = account.getLastName();
-    Address address = account.getAddress();
-    String street = account.getStreet();
-    String city = account.getCity();
-    String province = account.getProvince();
-    String postalCode = account.getPostalCode();
-    String phoneNumber = account.getPhoneNumber();
-    String email = account.getEmail();
-    String birthdate = account.getBirthdate();
+      String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
+      PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
+      checkAddressExistStmt.setString(1, street);
+      checkAddressExistStmt.setString(2, city);
+      checkAddressExistStmt.setString(3, province);
+      checkAddressExistStmt.setString(4, postalCode);
+      ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
+      int addressId = -1;
+      if (checkAddressExistResult.next()) {
+        addressId = checkAddressExistResult.getInt("ID");
+      } else {
+        addressId = insertAddressIfNotExists(address);
+      }
+      checkAddressExistResult.close();
+      checkAddressExistStmt.close();
 
-    String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
-    PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
-    checkAddressExistStmt.setString(1, street);
-    checkAddressExistStmt.setString(2, city);
-    checkAddressExistStmt.setString(3, province);
-    checkAddressExistStmt.setString(4, postalCode);
-    ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
-    int addressId = -1;
-    if(checkAddressExistResult.next()){
-      addressId = checkAddressExistResult.getInt("ID");
-    } else {
-      addressId = insertAddressIfNotExists(address);
-    }    
-    checkAddressExistStmt.close();
+      if (addressId != -1) {
+        String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
+        PreparedStatement insertAccountStmt = conn.prepareStatement(insertAccountQuery,
+            Statement.RETURN_GENERATED_KEYS);
+        insertAccountStmt.setString(1, firstName);
+        insertAccountStmt.setString(2, lastName);
+        insertAccountStmt.setString(3, birthdate);
+        insertAccountStmt.setInt(4, addressId);
+        insertAccountStmt.setString(5, phoneNumber);
+        insertAccountStmt.setString(6, email);
+        insertAccountStmt.executeUpdate();
+        ResultSet keys = insertAccountStmt.getGeneratedKeys();
+        keys.next();
+        accountId = keys.getInt(1);
+        insertAccountStmt.close();
+      }
+      return accountId;
+    } catch (SQLException e) {
+      if(e.toString().contains("SQLITE_CONSTRAINT_UNIQUE")){
+        System.out.println("User already exist");        
+      }
+      return -1;
+    }
     
-    if(addressId != -1){
-      String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
-      PreparedStatement insertAccountStmt = conn.prepareStatement(insertAccountQuery, Statement.RETURN_GENERATED_KEYS);
-      insertAccountStmt.setString(1, firstName);
-      insertAccountStmt.setString(2, lastName);
-      insertAccountStmt.setString(3, birthdate);
-      insertAccountStmt.setInt(4,addressId);
-      insertAccountStmt.setString(5, phoneNumber);
-      insertAccountStmt.setString(6, email);
-      insertAccountStmt.executeUpdate();
-      ResultSet keys = insertAccountStmt.getGeneratedKeys();
-      keys.next();
-      accountId = keys.getInt(1);
-      insertAccountStmt.close();
-    }   
-
-    return accountId;
   }
 
   /*
@@ -168,7 +176,8 @@ public class DatabaseMethods {
     // TODO: Implement
     String creditCardNumber = passenger.getCreditCardNumber();
     String insertPassengerQuery = "INSERT INTO passengers VALUES (?,?);";
-    PreparedStatement insertPassengerStmt = conn.prepareStatement(insertPassengerQuery,Statement.RETURN_GENERATED_KEYS);
+    PreparedStatement insertPassengerStmt = conn.prepareStatement(insertPassengerQuery,
+        Statement.RETURN_GENERATED_KEYS);
     insertPassengerStmt.setInt(1, accountId);
     insertPassengerStmt.setString(2, creditCardNumber);
     insertPassengerStmt.executeUpdate();
@@ -214,7 +223,7 @@ public class DatabaseMethods {
   public int insertLicense(String licenseNumber, String licenseExpiry) throws SQLException {
     int licenseId = -1;
     String insertLicenseQuery = "INSERT INTO licenses (NUMBER,EXPIRY_DATE) VALUES (?,?)";
-    PreparedStatement insertLicenseStmt = conn.prepareStatement(insertLicenseQuery,Statement.RETURN_GENERATED_KEYS);
+    PreparedStatement insertLicenseStmt = conn.prepareStatement(insertLicenseQuery, Statement.RETURN_GENERATED_KEYS);
     insertLicenseStmt.setString(1, licenseNumber);
     insertLicenseStmt.setString(2, licenseExpiry);
     insertLicenseStmt.executeUpdate();
@@ -373,17 +382,19 @@ public class DatabaseMethods {
       throws SQLException {
     ArrayList<FavouriteDestination> favouriteDestinations = new ArrayList<FavouriteDestination>();
     String getFavouriteDestinationForPassengerQuery = "SELECT f.NAME, a.ID, a.STREET, a.CITY, a.PROVINCE, a.POSTAL_CODE FROM favourite_locations f INNER JOIN addresses a ON f.LOCATION_ID = a.ID INNER JOIN passengers p ON p.ID = f.ID INNER JOIN accounts ac ON ac.ID = p.ID WHERE ac.EMAIL = ?";
-    PreparedStatement getFavouriteDestinationForPassengerStmt = conn.prepareStatement(getFavouriteDestinationForPassengerQuery);
+    PreparedStatement getFavouriteDestinationForPassengerStmt = conn
+        .prepareStatement(getFavouriteDestinationForPassengerQuery);
     getFavouriteDestinationForPassengerStmt.setString(1, passengerEmail);
-    ResultSet getFavouriteDestinationForPassengerResult =  getFavouriteDestinationForPassengerStmt.executeQuery();
-    while(getFavouriteDestinationForPassengerResult.next()){
+    ResultSet getFavouriteDestinationForPassengerResult = getFavouriteDestinationForPassengerStmt.executeQuery();
+    while (getFavouriteDestinationForPassengerResult.next()) {
       String destinationName = getFavouriteDestinationForPassengerResult.getString("NAME");
       String streetName = getFavouriteDestinationForPassengerResult.getString("STREET");
       String cityName = getFavouriteDestinationForPassengerResult.getString("CITY");
       String provinceName = getFavouriteDestinationForPassengerResult.getString("PROVINCE");
       String postalCode = getFavouriteDestinationForPassengerResult.getString("POSTAL_CODE");
       int addressId = getFavouriteDestinationForPassengerResult.getInt("ID");
-      FavouriteDestination favouriteDestination = new FavouriteDestination(destinationName, addressId, streetName, cityName, provinceName, postalCode);
+      FavouriteDestination favouriteDestination = new FavouriteDestination(destinationName, addressId, streetName,
+          cityName, provinceName, postalCode);
       favouriteDestinations.add(favouriteDestination);
     }
     return favouriteDestinations;
