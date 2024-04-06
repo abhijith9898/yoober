@@ -237,7 +237,13 @@ public class DatabaseMethods {
    */
   public void insertFavouriteDestination(String favouriteName, String passengerEmail, int addressId)
       throws SQLException {
-    // TODO: Implement
+    int passengerId = getPassengerIdFromEmail(passengerEmail);
+    String insertFavouriteDestinationQuery = "INSERT INTO favourite_locations (PASSENGER_ID, LOCATION_ID, NAME) VALUES (?,?,?)";
+    PreparedStatement insertFavouriteDestinationStmt = conn.prepareStatement(insertFavouriteDestinationQuery);
+    insertFavouriteDestinationStmt.setString(3, favouriteName);
+    insertFavouriteDestinationStmt.setInt(1, passengerId);
+    insertFavouriteDestinationStmt.setInt(2, addressId);
+    insertFavouriteDestinationStmt.executeUpdate();
   }
 
   /*
@@ -272,8 +278,15 @@ public class DatabaseMethods {
       int numberOfPassengers) throws SQLException {
     int passengerId = this.getPassengerIdFromEmail(passengerEmail);
     int pickupAddressId = this.getAccountAddressIdFromEmail(passengerEmail);
-
-    // TODO: Implement
+    String insertRideRequestQuery = "INSERT INTO ride_requests (PASSENGER_ID,PICKUP_LOCATION_ID,PICKUP_DATE,PICKUP_TIME,NUMBER_OF_RIDERS,DROPOFF_LOCATION_ID) VALUES (?,?,?,?,?,?)";
+    PreparedStatement insertRideRequestStmt = conn.prepareStatement(insertRideRequestQuery);
+    insertRideRequestStmt.setInt(1, passengerId);
+    insertRideRequestStmt.setInt(2, pickupAddressId);
+    insertRideRequestStmt.setString(3, date);
+    insertRideRequestStmt.setString(4, time);
+    insertRideRequestStmt.setInt(5, numberOfPassengers);
+    insertRideRequestStmt.setInt(6, dropoffLocationId);
+    insertRideRequestStmt.executeUpdate();
   }
 
   /*
@@ -284,8 +297,12 @@ public class DatabaseMethods {
    */
   public int getPassengerIdFromEmail(String passengerEmail) throws SQLException {
     int passengerId = -1;
-    // TODO: Implement
-
+    String getPassengerIdFromEmailQuery = "SELECT a.ID FROM accounts a INNER JOIN passengers p ON a.ID = p.ID WHERE a.EMAIL = ?";
+    PreparedStatement getPassengerFromEmailIdStmt = conn.prepareStatement(getPassengerIdFromEmailQuery);
+    getPassengerFromEmailIdStmt.setString(1, passengerEmail);
+    ResultSet passengerIdResultSet = getPassengerFromEmailIdStmt.executeQuery();
+    passengerIdResultSet.next();
+    passengerId = passengerIdResultSet.getInt(1);
     return passengerId;
   }
 
@@ -309,8 +326,12 @@ public class DatabaseMethods {
    */
   public int getAccountAddressIdFromEmail(String email) throws SQLException {
     int addressId = -1;
-    // TODO: Implement
-
+    String getAccountAddressIdFromEmailQuery = "SELECT a.ADDRESS_ID from accounts a INNER JOIN passengers p ON p.ID = a.ID WHERE a.EMAIL = ?";
+    PreparedStatement getAccountAddressIdFromEmailStmt = conn.prepareStatement(getAccountAddressIdFromEmailQuery);
+    getAccountAddressIdFromEmailStmt.setString(1, email);
+    ResultSet getAccountAddressIdFromEmailResult = getAccountAddressIdFromEmailStmt.executeQuery();
+    getAccountAddressIdFromEmailResult.next();
+    addressId = getAccountAddressIdFromEmailResult.getInt(1);
     return addressId;
   }
 
@@ -323,9 +344,20 @@ public class DatabaseMethods {
   public ArrayList<FavouriteDestination> getFavouriteDestinationsForPassenger(String passengerEmail)
       throws SQLException {
     ArrayList<FavouriteDestination> favouriteDestinations = new ArrayList<FavouriteDestination>();
-
-    // TODO: Implement
-
+    String getFavouriteDestinationForPassengerQuery = "SELECT f.NAME, a.ID, a.STREET, a.CITY, a.PROVINCE, a.POSTAL_CODE FROM favourite_locations f INNER JOIN addresses a ON f.LOCATION_ID = a.ID INNER JOIN passengers p ON p.ID = f.ID INNER JOIN accounts ac ON ac.ID = p.ID WHERE ac.EMAIL = ?";
+    PreparedStatement getFavouriteDestinationForPassengerStmt = conn.prepareStatement(getFavouriteDestinationForPassengerQuery);
+    getFavouriteDestinationForPassengerStmt.setString(1, passengerEmail);
+    ResultSet getFavouriteDestinationForPassengerResult =  getFavouriteDestinationForPassengerStmt.executeQuery();
+    while(getFavouriteDestinationForPassengerResult.next()){
+      String destinationName = getFavouriteDestinationForPassengerResult.getString("NAME");
+      String streetName = getFavouriteDestinationForPassengerResult.getString("STREET");
+      String cityName = getFavouriteDestinationForPassengerResult.getString("CITY");
+      String provinceName = getFavouriteDestinationForPassengerResult.getString("PROVINCE");
+      String postalCode = getFavouriteDestinationForPassengerResult.getString("POSTAL_CODE");
+      int addressId = getFavouriteDestinationForPassengerResult.getInt("ID");
+      FavouriteDestination favouriteDestination = new FavouriteDestination(destinationName, addressId, streetName, cityName, provinceName, postalCode);
+      favouriteDestinations.add(favouriteDestination);
+    }
     return favouriteDestinations;
   }
 
