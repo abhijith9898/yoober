@@ -46,6 +46,8 @@ public class DatabaseMethods {
           birthdate, isPassenger, isDriver);
       accounts.add(accountObj);
     }
+    statement.close();
+    allAccountsResult.close();
 
     return accounts;
   }
@@ -59,17 +61,13 @@ public class DatabaseMethods {
   public double getAverageRatingForDriver(String driverEmail) throws SQLException {
     double averageRating = 0.0;
     String avgRatingByEmailQuery = "SELECT AVG(RATING_FROM_PASSENGER) AS AVG_RATING from rides r LEFT JOIN drivers d ON r.DRIVER_ID=d.ID LEFT JOIN accounts a ON d.ID=a.ID WHERE a.EMAIL = ?";
-    // Statement statement = conn.createStatement();
-    // ResultSet avgRatingByEmailResult =
-    // statement.executeQuery(avgRatingByEmailQuery);
-    // averageRating = avgRatingByEmailResult.getDouble("AVG_RATING");
-
     PreparedStatement avgRatingByEmailStmt = conn.prepareStatement(avgRatingByEmailQuery);
     avgRatingByEmailStmt.setString(1, driverEmail);
     ResultSet avgRatingByEmailResult = avgRatingByEmailStmt.executeQuery();
     averageRating = avgRatingByEmailResult.getDouble("AVG_RATING");
     // System.out.println("average ratng" + averageRating);
-
+    avgRatingByEmailStmt.close();
+    avgRatingByEmailResult.close();
     return averageRating;
   }
 
@@ -109,60 +107,54 @@ public class DatabaseMethods {
    */
   public int insertAccount(Account account) throws SQLException {
     int accountId = -1;
-    try {
-      // TODO: Implement
-      // Hint: Use the insertAddressIfNotExists method
-      String firstName = account.getFirstName();
-      String lastName = account.getLastName();
-      Address address = account.getAddress();
-      String street = account.getStreet();
-      String city = account.getCity();
-      String province = account.getProvince();
-      String postalCode = account.getPostalCode();
-      String phoneNumber = account.getPhoneNumber();
-      String email = account.getEmail();
-      String birthdate = account.getBirthdate();
+    // TODO: Implement
+    // Hint: Use the insertAddressIfNotExists method
+    String firstName = account.getFirstName();
+    String lastName = account.getLastName();
+    Address address = account.getAddress();
+    String street = account.getStreet();
+    String city = account.getCity();
+    String province = account.getProvince();
+    String postalCode = account.getPostalCode();
+    String phoneNumber = account.getPhoneNumber();
+    String email = account.getEmail();
+    String birthdate = account.getBirthdate();
 
-      String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
-      PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
-      checkAddressExistStmt.setString(1, street);
-      checkAddressExistStmt.setString(2, city);
-      checkAddressExistStmt.setString(3, province);
-      checkAddressExistStmt.setString(4, postalCode);
-      ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
-      int addressId = -1;
-      if (checkAddressExistResult.next()) {
-        addressId = checkAddressExistResult.getInt("ID");
-      } else {
-        addressId = insertAddressIfNotExists(address);
-      }
-      checkAddressExistResult.close();
-      checkAddressExistStmt.close();
-
-      if (addressId != -1) {
-        String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
-        PreparedStatement insertAccountStmt = conn.prepareStatement(insertAccountQuery,
-            Statement.RETURN_GENERATED_KEYS);
-        insertAccountStmt.setString(1, firstName);
-        insertAccountStmt.setString(2, lastName);
-        insertAccountStmt.setString(3, birthdate);
-        insertAccountStmt.setInt(4, addressId);
-        insertAccountStmt.setString(5, phoneNumber);
-        insertAccountStmt.setString(6, email);
-        insertAccountStmt.executeUpdate();
-        ResultSet keys = insertAccountStmt.getGeneratedKeys();
-        keys.next();
-        accountId = keys.getInt(1);
-        insertAccountStmt.close();
-      }
-      return accountId;
-    } catch (SQLException e) {
-      if(e.toString().contains("SQLITE_CONSTRAINT_UNIQUE")){
-        System.out.println("User already exist");        
-      }
-      return -1;
+    String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
+    PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
+    checkAddressExistStmt.setString(1, street);
+    checkAddressExistStmt.setString(2, city);
+    checkAddressExistStmt.setString(3, province);
+    checkAddressExistStmt.setString(4, postalCode);
+    ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
+    int addressId = -1;
+    if (checkAddressExistResult.next()) {
+      addressId = checkAddressExistResult.getInt("ID");
+    } else {
+      addressId = insertAddressIfNotExists(address);
     }
-    
+    checkAddressExistResult.close();
+    checkAddressExistStmt.close();
+
+    if (addressId != -1) {
+      String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
+      PreparedStatement insertAccountStmt = conn.prepareStatement(insertAccountQuery,
+          Statement.RETURN_GENERATED_KEYS);
+      insertAccountStmt.setString(1, firstName);
+      insertAccountStmt.setString(2, lastName);
+      insertAccountStmt.setString(3, birthdate);
+      insertAccountStmt.setInt(4, addressId);
+      insertAccountStmt.setString(5, phoneNumber);
+      insertAccountStmt.setString(6, email);
+      insertAccountStmt.executeUpdate();
+      ResultSet keys = insertAccountStmt.getGeneratedKeys();
+      keys.next();
+      accountId = keys.getInt(1);
+      insertAccountStmt.close();
+      keys.close();
+    }
+    return accountId;
+
   }
 
   /*
@@ -185,6 +177,7 @@ public class DatabaseMethods {
     keys.next();
     accountId = keys.getInt(1);
     insertPassengerStmt.close();
+    keys.close();
     return accountId;
   }
 
@@ -211,6 +204,7 @@ public class DatabaseMethods {
       keys.next();
       accountId = keys.getInt(1);
       insertDriverStmt.close();
+      keys.close();
     }
     return accountId;
   }
@@ -231,6 +225,7 @@ public class DatabaseMethods {
     keys.next();
     licenseId = keys.getInt(1);
     insertLicenseStmt.close();
+    keys.close();
     return licenseId;
   }
 
@@ -261,6 +256,7 @@ public class DatabaseMethods {
     keys.next();
     addressId = keys.getInt(1);
     insertAddressStmt.close();
+    keys.close();
 
     return addressId;
   }
@@ -281,6 +277,8 @@ public class DatabaseMethods {
     insertFavouriteDestinationStmt.setInt(1, passengerId);
     insertFavouriteDestinationStmt.setInt(2, addressId);
     insertFavouriteDestinationStmt.executeUpdate();
+    insertFavouriteDestinationStmt.close();
+
   }
 
   /*
@@ -290,8 +288,19 @@ public class DatabaseMethods {
    */
   public boolean checkDriverExists(String email) throws SQLException {
     // TODO: Implement
-
-    return true;
+    String checkDriverQuery = "SELECT d.ID as DRIVER_ID FROM accounts a INNER JOIN drivers d ON a.ID = d.ID WHERE a.EMAIL = ?";
+    PreparedStatement checkDriverStmt = conn.prepareStatement(checkDriverQuery);
+    checkDriverStmt.setString(1, email);
+    ResultSet checkDriverResult = checkDriverStmt.executeQuery();
+    if(checkDriverResult.next()){
+      checkDriverStmt.close();
+      checkDriverResult.close();
+      return true;
+    } else{
+      checkDriverStmt.close();
+      checkDriverResult.close();
+      return false;
+    }
   }
 
   /*
@@ -301,8 +310,19 @@ public class DatabaseMethods {
    */
   public boolean checkPassengerExists(String email) throws SQLException {
     // TODO: Implement
-
-    return true;
+    String checkPassengerQuery = "SELECT p.ID as PASSENGER_ID FROM accounts a INNER JOIN passengers p ON a.ID = p.ID WHERE a.EMAIL = ?";
+    PreparedStatement checkPassengerStmt = conn.prepareStatement(checkPassengerQuery);
+    checkPassengerStmt.setString(1, email);
+    ResultSet checkPassengerResult = checkPassengerStmt.executeQuery();
+    if(checkPassengerResult.next()){
+      checkPassengerStmt.close();
+      checkPassengerResult.close();
+      return true;
+    } else{
+      checkPassengerStmt.close();
+      checkPassengerResult.close();
+      return false;
+    }
   }
 
   /*
@@ -324,6 +344,7 @@ public class DatabaseMethods {
     insertRideRequestStmt.setInt(5, numberOfPassengers);
     insertRideRequestStmt.setInt(6, dropoffLocationId);
     insertRideRequestStmt.executeUpdate();
+    insertRideRequestStmt.close();
   }
 
   /*
@@ -340,6 +361,8 @@ public class DatabaseMethods {
     ResultSet passengerIdResultSet = getPassengerFromEmailIdStmt.executeQuery();
     passengerIdResultSet.next();
     passengerId = passengerIdResultSet.getInt(1);
+    getPassengerFromEmailIdStmt.close();
+    passengerIdResultSet.close();
     return passengerId;
   }
 
@@ -369,6 +392,8 @@ public class DatabaseMethods {
     ResultSet getAccountAddressIdFromEmailResult = getAccountAddressIdFromEmailStmt.executeQuery();
     getAccountAddressIdFromEmailResult.next();
     addressId = getAccountAddressIdFromEmailResult.getInt(1);
+    getAccountAddressIdFromEmailStmt.close();
+    getAccountAddressIdFromEmailResult.close();
     return addressId;
   }
 
@@ -397,6 +422,8 @@ public class DatabaseMethods {
           cityName, provinceName, postalCode);
       favouriteDestinations.add(favouriteDestination);
     }
+    getFavouriteDestinationForPassengerStmt.close();
+    getFavouriteDestinationForPassengerResult.close();
     return favouriteDestinations;
   }
 
