@@ -82,9 +82,7 @@ public class DatabaseMethods {
    * Returns: Nothing
    */
   public void createAccount(Account account, Passenger passenger, Driver driver) throws SQLException {
-    // TODO: Implement
-    // Hint: Use the available insertAccount, insertPassenger, and insertDriver
-    // methods
+
     int accountId = insertAccount(account);
     if (accountId != -1) {
       if (account.isDriverAndPassenger()) {
@@ -107,34 +105,34 @@ public class DatabaseMethods {
    */
   public int insertAccount(Account account) throws SQLException {
     int accountId = -1;
-    // TODO: Implement
-    // Hint: Use the insertAddressIfNotExists method
     String firstName = account.getFirstName();
     String lastName = account.getLastName();
     Address address = account.getAddress();
-    String street = account.getStreet();
-    String city = account.getCity();
-    String province = account.getProvince();
-    String postalCode = account.getPostalCode();
+    // String street = account.getStreet();
+    // String city = account.getCity();
+    // String province = account.getProvince();
+    // String postalCode = account.getPostalCode();
     String phoneNumber = account.getPhoneNumber();
     String email = account.getEmail();
     String birthdate = account.getBirthdate();
 
-    String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
-    PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
-    checkAddressExistStmt.setString(1, street);
-    checkAddressExistStmt.setString(2, city);
-    checkAddressExistStmt.setString(3, province);
-    checkAddressExistStmt.setString(4, postalCode);
-    ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
+    // String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ?
+    // AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
+    // PreparedStatement checkAddressExistStmt =
+    // conn.prepareStatement(checkAddressExistQuery);
+    // checkAddressExistStmt.setString(1, street);
+    // checkAddressExistStmt.setString(2, city);
+    // checkAddressExistStmt.setString(3, province);
+    // checkAddressExistStmt.setString(4, postalCode);
+    // ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
     int addressId = -1;
-    if (checkAddressExistResult.next()) {
-      addressId = checkAddressExistResult.getInt("ID");
-    } else {
-      addressId = insertAddressIfNotExists(address);
-    }
-    checkAddressExistResult.close();
-    checkAddressExistStmt.close();
+    // if (checkAddressExistResult.next()) {
+    // addressId = checkAddressExistResult.getInt("ID");
+    // } else {
+    addressId = insertAddressIfNotExists(address);
+    // }
+    // checkAddressExistResult.close();
+    // checkAddressExistStmt.close();
 
     if (addressId != -1) {
       String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
@@ -165,7 +163,7 @@ public class DatabaseMethods {
    * Returns: Id of the new passenger
    */
   public int insertPassenger(Passenger passenger, int accountId) throws SQLException {
-    // TODO: Implement
+
     String creditCardNumber = passenger.getCreditCardNumber();
     String insertPassengerQuery = "INSERT INTO passengers VALUES (?,?);";
     PreparedStatement insertPassengerStmt = conn.prepareStatement(insertPassengerQuery,
@@ -188,8 +186,7 @@ public class DatabaseMethods {
    * Returns: Id of the new driver
    */
   public int insertDriver(Driver driver, int accountId) throws SQLException {
-    // TODO: Implement
-    // Hint: Use the insertLicense method
+
     int licenseId = -1;
     String licenseNumber = driver.getLicenseNumber();
     String licenseExpiry = driver.getLicenseExpiryDate();
@@ -244,19 +241,32 @@ public class DatabaseMethods {
     String city = address.getCity();
     String province = address.getProvince();
     String postalCode = address.getPostalCode();
-    // TODO: Implement
-    String insertAddressSql = "INSERT INTO addresses (STREET,CITY,PROVINCE,POSTAL_CODE) VALUES (?,?,?,?)";
-    PreparedStatement insertAddressStmt = conn.prepareStatement(insertAddressSql, Statement.RETURN_GENERATED_KEYS);
-    insertAddressStmt.setString(1, street);
-    insertAddressStmt.setString(2, city);
-    insertAddressStmt.setString(3, province);
-    insertAddressStmt.setString(4, postalCode);
-    insertAddressStmt.executeUpdate();
-    ResultSet keys = insertAddressStmt.getGeneratedKeys();
-    keys.next();
-    addressId = keys.getInt(1);
-    insertAddressStmt.close();
-    keys.close();
+
+    String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ? AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
+    PreparedStatement checkAddressExistStmt = conn.prepareStatement(checkAddressExistQuery);
+    checkAddressExistStmt.setString(1, street);
+    checkAddressExistStmt.setString(2, city);
+    checkAddressExistStmt.setString(3, province);
+    checkAddressExistStmt.setString(4, postalCode);
+    ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
+    if (checkAddressExistResult.next()) {
+      addressId = checkAddressExistResult.getInt("ID");
+      checkAddressExistResult.close();
+      checkAddressExistStmt.close();
+    } else {
+      String insertAddressSql = "INSERT INTO addresses (STREET,CITY,PROVINCE,POSTAL_CODE) VALUES (?,?,?,?)";
+      PreparedStatement insertAddressStmt = conn.prepareStatement(insertAddressSql, Statement.RETURN_GENERATED_KEYS);
+      insertAddressStmt.setString(1, street);
+      insertAddressStmt.setString(2, city);
+      insertAddressStmt.setString(3, province);
+      insertAddressStmt.setString(4, postalCode);
+      insertAddressStmt.executeUpdate();
+      ResultSet keys = insertAddressStmt.getGeneratedKeys();
+      keys.next();
+      addressId = keys.getInt(1);
+      insertAddressStmt.close();
+      keys.close();
+    }
 
     return addressId;
   }
@@ -287,16 +297,15 @@ public class DatabaseMethods {
    * Returns: True if exists, false if not
    */
   public boolean checkDriverExists(String email) throws SQLException {
-    // TODO: Implement
     String checkDriverQuery = "SELECT d.ID as DRIVER_ID FROM accounts a INNER JOIN drivers d ON a.ID = d.ID WHERE a.EMAIL = ?";
     PreparedStatement checkDriverStmt = conn.prepareStatement(checkDriverQuery);
     checkDriverStmt.setString(1, email);
     ResultSet checkDriverResult = checkDriverStmt.executeQuery();
-    if(checkDriverResult.next()){
+    if (checkDriverResult.next()) {
       checkDriverStmt.close();
       checkDriverResult.close();
       return true;
-    } else{
+    } else {
       checkDriverStmt.close();
       checkDriverResult.close();
       return false;
@@ -309,16 +318,15 @@ public class DatabaseMethods {
    * Returns: True if exists, false if not
    */
   public boolean checkPassengerExists(String email) throws SQLException {
-    // TODO: Implement
     String checkPassengerQuery = "SELECT p.ID as PASSENGER_ID FROM accounts a INNER JOIN passengers p ON a.ID = p.ID WHERE a.EMAIL = ?";
     PreparedStatement checkPassengerStmt = conn.prepareStatement(checkPassengerQuery);
     checkPassengerStmt.setString(1, email);
     ResultSet checkPassengerResult = checkPassengerStmt.executeQuery();
-    if(checkPassengerResult.next()){
+    if (checkPassengerResult.next()) {
       checkPassengerStmt.close();
       checkPassengerResult.close();
       return true;
-    } else{
+    } else {
       checkPassengerStmt.close();
       checkPassengerResult.close();
       return false;
@@ -373,7 +381,13 @@ public class DatabaseMethods {
    */
   public int getDriverIdFromEmail(String driverEmail) throws SQLException {
     int driverId = -1;
-    // TODO: Implement
+    String getDriverQuery = "SELECT d.ID as DRIVER_ID FROM accounts a INNER JOIN drivers d ON a.ID = d.ID WHERE a.EMAIL = ?";
+    PreparedStatement getDriverStmt = conn.prepareStatement(getDriverQuery);
+    getDriverStmt.setString(1, driverEmail);
+    ResultSet getDriverResult = getDriverStmt.executeQuery();
+    driverId = getDriverResult.getInt("DRIVER_ID");
+    getDriverStmt.close();
+    getDriverResult.close();
 
     return driverId;
   }
@@ -436,7 +450,26 @@ public class DatabaseMethods {
   public ArrayList<RideRequest> getUncompletedRideRequests() throws SQLException {
     ArrayList<RideRequest> uncompletedRideRequests = new ArrayList<RideRequest>();
 
-    // TODO: Implement
+    String uncompleteRequestQuery = "SELECT rr.ID AS REQUEST_ID,FIRST_NAME,LAST_NAME, ad1.STREET AS PICKUP_STREET,ad1.CITY AS PICKUP_CITY, ad2.STREET AS DROP_STREET,ad2.CITY AS DROP_CITY, PICKUP_TIME, PICKUP_DATE FROM ride_requests rr LEFT JOIN rides r ON rr.ID = r.REQUEST_ID INNER JOIN passengers p ON p.ID = rr.PASSENGER_ID INNER JOIN accounts a ON a.ID = p.ID INNER JOIN addresses ad1 ON rr.PICKUP_LOCATION_ID = ad1.ID INNER JOIN addresses ad2 ON rr.DROPOFF_LOCATION_ID = ad2.ID  WHERE r.REQUEST_ID ISNULL";
+    Statement statement = conn.createStatement();
+    ResultSet uncompleteRequestResult = statement.executeQuery(uncompleteRequestQuery);
+
+    while (uncompleteRequestResult.next()) {
+      String firstName = uncompleteRequestResult.getString("FIRST_NAME");
+      String lastName = uncompleteRequestResult.getString("LAST_NAME");
+      int requestId = uncompleteRequestResult.getInt("REQUEST_ID");
+      String pickupStreet = uncompleteRequestResult.getString("PICKUP_STREET");
+      String pickupCity = uncompleteRequestResult.getString("PICKUP_CITY");
+      String dropStreet = uncompleteRequestResult.getString("DROP_STREET");
+      String dropCity = uncompleteRequestResult.getString("DROP_CITY");
+      String pickupTime = uncompleteRequestResult.getString("PICKUP_TIME");
+      String pickupDate = uncompleteRequestResult.getString("PICKUP_DATE");
+      RideRequest obj = new RideRequest(requestId, firstName, lastName, pickupStreet, pickupCity, dropStreet, dropCity,
+          pickupDate, pickupTime);
+      uncompletedRideRequests.add(obj);
+    }
+    statement.close();
+    uncompleteRequestResult.close();
 
     return uncompletedRideRequests;
   }
@@ -449,6 +482,21 @@ public class DatabaseMethods {
   public void insertRide(Ride ride) throws SQLException {
     // TODO: Implement
     // Hint: Use getDriverIdFromEmail
+    int driverId = getDriverIdFromEmail(ride.getDriverEmail());
+    String completeRideQuery = "INSERT INTO rides (DRIVER_ID,REQUEST_ID,ACTUAL_START_DATE,ACTUAL_START_TIME,ACTUAL_END_DATE,ACTUAL_END_TIME,RATING_FROM_DRIVER,RATING_FROM_PASSENGER,DISTANCE,CHARGE) VALUES (?,?,?,?,?,?,?,?,?,?)";
+    PreparedStatement completeRideStmt = conn.prepareStatement(completeRideQuery);
+    completeRideStmt.setInt(1, driverId);
+    completeRideStmt.setInt(2, ride.getRideRequestId());
+    completeRideStmt.setString(3, ride.getStartDate());
+    completeRideStmt.setString(4, ride.getStartTime());
+    completeRideStmt.setString(5, ride.getEndDate());
+    completeRideStmt.setString(6, ride.getEndTime());
+    completeRideStmt.setInt(7, ride.getRatingFromDriver());
+    completeRideStmt.setInt(8, ride.getRatingFromPassenger());
+    completeRideStmt.setDouble(9, ride.getDistance());
+    completeRideStmt.setDouble(10, ride.getCharge());
+    completeRideStmt.executeUpdate();
+    completeRideStmt.close();
   }
 
 }
