@@ -108,31 +108,14 @@ public class DatabaseMethods {
     String firstName = account.getFirstName();
     String lastName = account.getLastName();
     Address address = account.getAddress();
-    // String street = account.getStreet();
-    // String city = account.getCity();
-    // String province = account.getProvince();
-    // String postalCode = account.getPostalCode();
     String phoneNumber = account.getPhoneNumber();
     String email = account.getEmail();
     String birthdate = account.getBirthdate();
 
-    // String checkAddressExistQuery = "SELECT ID FROM addresses WHERE STREET = ?
-    // AND CITY= ? AND PROVINCE= ? AND POSTAL_CODE= ?";
-    // PreparedStatement checkAddressExistStmt =
-    // conn.prepareStatement(checkAddressExistQuery);
-    // checkAddressExistStmt.setString(1, street);
-    // checkAddressExistStmt.setString(2, city);
-    // checkAddressExistStmt.setString(3, province);
-    // checkAddressExistStmt.setString(4, postalCode);
-    // ResultSet checkAddressExistResult = checkAddressExistStmt.executeQuery();
     int addressId = -1;
-    // if (checkAddressExistResult.next()) {
-    // addressId = checkAddressExistResult.getInt("ID");
-    // } else {
+
     addressId = insertAddressIfNotExists(address);
-    // }
-    // checkAddressExistResult.close();
-    // checkAddressExistStmt.close();
+
 
     if (addressId != -1) {
       String insertAccountQuery = "INSERT INTO accounts (FIRST_NAME,LAST_NAME,BIRTHDATE,ADDRESS_ID,PHONE_NUMBER,EMAIL) VALUES (?,?,?,?,?,?)";
